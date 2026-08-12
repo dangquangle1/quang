@@ -1,0 +1,5 @@
+# Copy to backend.hcl (gitignored) and fill the bucket from the bootstrap output:
+#   cd bootstrap && terraform output state_bucket
+# Then, from this project dir:  terraform init -backend-config=backend.hcl
+bucket = "quang-tfstate-<AWS_ACCOUNT_ID>"
+region = "us-east-1"

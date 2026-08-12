@@ -1,0 +1,32 @@
+{
+  "theme": "dark",
+  "model": "opus",
+  "permissions": {
+    "deny": [
+      "Read(~/.ssh/**)",
+      "Read(~/.aws/**)",
+      "Read(~/.claude/projects/**)",
+      "Read(~/.claude/history/**)",
+      "Read(**/.env)",
+      "Read(**/.env.*)",
+      "Read(**/*.pem)",
+      "Read(**/*.key)",
+      "Read(~/.netrc)",
+      "Read(~/.kube/config)",
+      "Read(~/.docker/config.json)",
+      "Read(~/.config/gcloud/**)",
+      "Read(~/.gnupg/**)"
+    ],
+    "allow": [
+      "Bash(terraform init:*)",
+      "Bash(terraform plan:*)",
+      "Bash(terraform validate:*)",
+      "Bash(terraform fmt -check:*)",
+      "WebFetch(domain:docs.aws.amazon.com)",
+      "WebFetch(domain:developer.hashicorp.com)",
+      "WebFetch(domain:registry.terraform.io)",
+      "WebFetch(domain:docs.python.org)",
+      "WebFetch(domain:pkg.go.dev)"
+    ]
+  }
+}

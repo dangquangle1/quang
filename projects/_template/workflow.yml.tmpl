@@ -1,0 +1,31 @@
+# Copy to .github/workflows/project-<name>.yml, replace PROJECT_NAME throughout,
+# then delete this .tmpl from the project directory.
+name: project-PROJECT_NAME
+
+on:
+  pull_request:
+    paths:
+      - "projects/PROJECT_NAME/**"
+      - ".github/workflows/_terraform.yml"
+      - ".github/workflows/project-PROJECT_NAME.yml"
+  push:
+    branches: [main]
+    paths:
+      - "projects/PROJECT_NAME/**"
+      - ".github/workflows/_terraform.yml"
+      - ".github/workflows/project-PROJECT_NAME.yml"
+
+# The caller must grant the permissions the reusable workflow needs so it can
+# pass them down (OIDC token + the PR plan comment).
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      working_directory: projects/PROJECT_NAME
+      environment: production
+    secrets: inherit

@@ -1,0 +1,32 @@
+name: project-polymarket-movers
+
+# Per-project pipeline: runs only when this project (or the shared modules)
+# change. Copy this file for each new project — change the name, the paths,
+# and working_directory.
+on:
+  pull_request:
+    paths:
+      - "projects/polymarket-movers/**"
+      - ".github/workflows/_terraform.yml"
+      - ".github/workflows/project-polymarket-movers.yml"
+  push:
+    branches: [main]
+    paths:
+      - "projects/polymarket-movers/**"
+      - ".github/workflows/_terraform.yml"
+      - ".github/workflows/project-polymarket-movers.yml"
+
+# The caller must grant the permissions the reusable workflow needs so it can
+# pass them down (OIDC token + the PR plan comment).
+permissions:
+  contents: read
+  id-token: write
+  pull-requests: write
+
+jobs:
+  terraform:
+    uses: ./.github/workflows/_terraform.yml
+    with:
+      working_directory: projects/polymarket-movers
+      environment: production
+    secrets: inherit
