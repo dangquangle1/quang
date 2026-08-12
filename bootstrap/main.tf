@@ -2,7 +2,7 @@ data "aws_caller_identity" "current" {}
 
 locals {
   state_bucket = "${var.state_bucket_prefix}-${data.aws_caller_identity.current.account_id}"
-  github_sub   = "repo:${var.github_owner}/${var.github_repo}"
+  repo_full    = "${var.github_owner}/${var.github_repo}"
 }
 
 # ---------------------------------------------------------------------------
@@ -101,10 +101,18 @@ data "aws_iam_policy_document" "plan_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
+    # Pin the repo via the clean `repository` claim (no numeric IDs); scope to
+    # pull-request context. AWS requires a `sub` condition and the sub embeds
+    # immutable owner/repo IDs, so match it with a wildcard.
+    condition {
+      test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:repository"
+      values   = [local.repo_full]
+    }
     condition {
       test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${local.github_sub}:pull_request"]
+      values   = ["repo:*:pull_request"]
     }
   }
 }
@@ -122,8 +130,10 @@ resource "aws_iam_role_policy" "plan_state" {
 }
 
 # ---------------------------------------------------------------------------
-# APPLY role — assumed only from refs/heads/main. Read/write state now;
-# resource-creation permissions get added here as you build.
+# APPLY role — assumed only by jobs running in the `production` environment
+# (the gated apply on main). Because the apply job uses environment:production,
+# GitHub sets the token sub to ...:environment:production (not ...:ref:...).
+# Read/write state now; resource-creation permissions get added here as you build.
 # ---------------------------------------------------------------------------
 data "aws_iam_policy_document" "apply_assume" {
   statement {
@@ -138,10 +148,18 @@ data "aws_iam_policy_document" "apply_assume" {
       variable = "token.actions.githubusercontent.com:aud"
       values   = ["sts.amazonaws.com"]
     }
+    # Pin the repo via the clean `repository` claim (no numeric IDs); scope to
+    # the gated `production` environment. AWS requires a `sub` condition and the
+    # sub embeds immutable owner/repo IDs, so match it with a wildcard.
     condition {
       test     = "StringEquals"
+      variable = "token.actions.githubusercontent.com:repository"
+      values   = [local.repo_full]
+    }
+    condition {
+      test     = "StringLike"
       variable = "token.actions.githubusercontent.com:sub"
-      values   = ["${local.github_sub}:ref:refs/heads/main"]
+      values   = ["repo:*:environment:production"]
     }
   }
 }
