@@ -1,0 +1,6 @@
+# Test-only. The Lambda itself has no third-party dependencies: it uses the
+# standard library plus boto3, which the Python runtime already provides.
+# boto3 is pinned here anyway because state.py imports it, so the tests need it
+# present to import the module at all.
+pytest==8.3.4
+boto3==1.35.36

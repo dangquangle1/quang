@@ -1,0 +1,41 @@
+name: project-polymarket-movers-tests
+
+# Unit tests for the Lambda source. Deliberately separate from the Terraform
+# engine: this needs no AWS credentials and no OIDC token, so _terraform.yml
+# stays purely about infrastructure.
+on:
+  pull_request:
+    paths: &paths
+      - "projects/polymarket-movers/src/**"
+      - "projects/polymarket-movers/tests/**"
+      - "projects/polymarket-movers/conftest.py"
+      - "projects/polymarket-movers/requirements-test.txt"
+      - ".github/workflows/project-polymarket-movers-tests.yml"
+  push:
+    branches: [main]
+    paths: *paths
+
+permissions:
+  contents: read
+
+jobs:
+  pytest:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: projects/polymarket-movers
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          # Match the Lambda runtime in main.tf.
+          python-version: "3.13"
+          cache: pip
+          cache-dependency-path: projects/polymarket-movers/requirements-test.txt
+
+      - name: Install test dependencies
+        run: pip install -r requirements-test.txt
+
+      - name: Run tests
+        run: python -m pytest tests -q
