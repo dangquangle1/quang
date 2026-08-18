@@ -176,6 +176,113 @@ resource "aws_iam_role_policy" "apply_state" {
   policy = data.aws_iam_policy_document.state_write.json
 }
 
-# TODO(least-privilege): as you add resources to the root config, attach the
-# matching permissions to aws_iam_role.apply here — e.g. a new
-# aws_iam_role_policy for the specific s3:/ec2:/lambda: actions Terraform needs.
+# ---------------------------------------------------------------------------
+# Read access for both roles
+#
+# `terraform plan` refreshes every managed resource, so even the plan-only role
+# needs Get*/Describe*/List* across whatever the projects manage — and several
+# of those (logs:DescribeLogGroups, ssm:DescribeParameters) can't be scoped to a
+# resource ARN at all. Enumerating them per service is brittle: one missing verb
+# is a failed pipeline run plus another local apply here to fix it.
+#
+# ReadOnlyAccess grants no mutations, so the plan role stays read-only in the
+# sense that matters. Trade-off: it can read anything in the account, not just
+# this project. Acceptable while this is a single personal account whose roles
+# are only assumable by this repo's own CI.
+# ---------------------------------------------------------------------------
+resource "aws_iam_role_policy_attachment" "plan_read" {
+  role       = aws_iam_role.plan.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+resource "aws_iam_role_policy_attachment" "apply_read" {
+  role       = aws_iam_role.apply.name
+  policy_arn = "arn:aws:iam::aws:policy/ReadOnlyAccess"
+}
+
+# ReadOnlyAccess deliberately omits kms:Decrypt, which refreshing a SecureString
+# parameter needs. ViaService means this unlocks nothing outside SSM.
+data "aws_iam_policy_document" "ssm_decrypt" {
+  statement {
+    sid       = "DecryptViaSsm"
+    actions   = ["kms:Decrypt"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${local.pmm_region}.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "plan_ssm_decrypt" {
+  name   = "ssm-decrypt"
+  role   = aws_iam_role.plan.id
+  policy = data.aws_iam_policy_document.ssm_decrypt.json
+}
+
+# ---------------------------------------------------------------------------
+# Write access — per project, scoped by resource name
+#
+# Actions are wildcarded per service and bounded by ARN instead: the blast
+# radius is set by *which resources* the role can touch, not which verbs. Adding
+# a resource type to a project usually needs nothing here; adding a new service
+# or renaming a resource does.
+#
+# Region is eu-west-2 — deliberately not var.region, which is where the state
+# bucket lives (us-east-1). The project's providers.tf pins eu-west-2.
+# ---------------------------------------------------------------------------
+locals {
+  pmm_name    = "polymarket-movers"
+  pmm_region  = "eu-west-2"
+  pmm_account = data.aws_caller_identity.current.account_id
+  pmm_log     = "arn:aws:logs:${local.pmm_region}:${local.pmm_account}:log-group:/aws/lambda/${local.pmm_name}"
+
+  pmm_role_arn = "arn:aws:iam::${local.pmm_account}:role/${local.pmm_name}-lambda"
+
+  pmm_resources = [
+    "arn:aws:lambda:${local.pmm_region}:${local.pmm_account}:function:${local.pmm_name}",
+    # Prefixed rather than exact so adding or renaming a table in the project
+    # doesn't require another local bootstrap apply.
+    "arn:aws:dynamodb:${local.pmm_region}:${local.pmm_account}:table/${local.pmm_name}-*",
+    "arn:aws:events:${local.pmm_region}:${local.pmm_account}:rule/${local.pmm_name}-schedule",
+    "arn:aws:ssm:${local.pmm_region}:${local.pmm_account}:parameter/${local.pmm_name}/*",
+    local.pmm_log,
+    "${local.pmm_log}:*",
+  ]
+}
+
+data "aws_iam_policy_document" "apply_polymarket_movers" {
+  statement {
+    sid       = "PmmProjectResources"
+    actions   = ["lambda:*", "dynamodb:*", "events:*", "logs:*", "ssm:*"]
+    resources = local.pmm_resources
+  }
+
+  # The Lambda execution role. Unconditioned PassRole is fine on this single
+  # ARN: the role's own trust policy admits only lambda.amazonaws.com, and its
+  # permissions are one DynamoDB table plus its own two SSM parameters — so
+  # there is nothing to escalate to.
+  statement {
+    sid       = "PmmExecutionRole"
+    actions   = ["iam:*Role*"]
+    resources = [local.pmm_role_arn]
+  }
+
+  statement {
+    sid       = "PmmSsmEncrypt"
+    actions   = ["kms:Decrypt", "kms:GenerateDataKey"]
+    resources = ["*"]
+    condition {
+      test     = "StringEquals"
+      variable = "kms:ViaService"
+      values   = ["ssm.${local.pmm_region}.amazonaws.com"]
+    }
+  }
+}
+
+resource "aws_iam_role_policy" "apply_polymarket_movers" {
+  name   = "polymarket-movers"
+  role   = aws_iam_role.apply.id
+  policy = data.aws_iam_policy_document.apply_polymarket_movers.json
+}

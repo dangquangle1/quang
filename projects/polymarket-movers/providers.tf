@@ -6,6 +6,13 @@ terraform {
       source  = "hashicorp/aws"
       version = "~> 5.0"
     }
+    # Builds the Lambda deployment zip from src/. The service has no
+    # third-party dependencies, so no pip stage or layer is needed and the
+    # CI pipeline stays purely Terraform.
+    archive = {
+      source  = "hashicorp/archive"
+      version = "~> 2.4"
+    }
   }
 }
 
