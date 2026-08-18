@@ -17,4 +17,4 @@ My public personal projects
 
 | Project | What it does |
 |---|---|
-| [`polymarket-movers`](projects/polymarket-movers) | Watches Polymarket news markets and posts sharp, volume-backed price moves to Telegram — prediction markets as a low-latency news feed. Lambda on a 1-minute schedule, `eu-west-2`. |
+| [`polymarket-movers`](projects/polymarket-movers) | Watches Polymarket news markets and posts sharp, volume-backed price moves to Telegram — prediction markets as a low-latency news feed. Live at [@polymarket_quick_moves](https://t.me/polymarket_quick_moves). Lambda on a 1-minute schedule, `eu-west-2`. |

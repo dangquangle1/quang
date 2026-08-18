@@ -2,7 +2,7 @@
 
 Prediction markets as a news feed. Every minute this checks ~160 Polymarket
 markets in news-relevant categories and posts anything making a sharp,
-volume-backed move to a Telegram channel.
+volume-backed move to Telegram: [**@polymarket_quick_moves**](https://t.me/polymarket_quick_moves).
 
 The bet is that a market repricing 8 points in four minutes usually knows
 something before the headline does.
