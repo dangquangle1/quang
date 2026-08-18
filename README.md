@@ -14,3 +14,7 @@ My public personal projects
 | `claude-config/` | Snapshot of my Claude Code config (steering, subagent, settings). Copy into `~/.claude/` to use. |
 
 ## Projects
+
+| Project | What it does |
+|---|---|
+| [`polymarket-movers`](projects/polymarket-movers) | Watches Polymarket news markets and posts sharp, volume-backed price moves to Telegram — prediction markets as a low-latency news feed. Lambda on a 1-minute schedule, `eu-west-2`. |
