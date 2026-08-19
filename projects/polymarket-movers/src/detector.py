@@ -12,7 +12,6 @@ catches it.
 
 from __future__ import annotations
 
-import json
 from dataclasses import dataclass
 from typing import Any, Iterable, List, Mapping, Optional, Sequence, Tuple
 
@@ -137,20 +136,6 @@ def spread_of(market: Mapping) -> Optional[float]:
     if mid <= 0:
         return None
     return (ask - bid) / mid
-
-
-def current_price(market: Mapping) -> Optional[float]:
-    """Price of the first outcome. outcomePrices arrives as a JSON string."""
-    raw = market.get("outcomePrices")
-    if isinstance(raw, str):
-        try:
-            raw = json.loads(raw)
-        except ValueError:
-            raw = None
-    if isinstance(raw, list) and raw:
-        return to_float(raw[0])
-    last = market.get("lastTradePrice")
-    return to_float(last) if last not in (None, "") else None
 
 
 def to_float(value: Any) -> float:

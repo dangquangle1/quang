@@ -162,7 +162,7 @@ against 400k), and SSM standard parameters are free.
 
 ```
 src/          config, gamma, clob, detector, state, telegram, ssm, handler
-tests/        87 unit tests, run in CI with no AWS credentials
+tests/        84 unit tests, run in CI with no AWS credentials
 *.tf          the 11 resources
 ```
 

@@ -1,11 +1,9 @@
-import json
 from dataclasses import replace
 
 import pytest
 
 from conftest import make_config
 from detector import (
-    current_price,
     evaluate,
     event_tag_ids,
     is_blocked,
@@ -24,8 +22,6 @@ def market(**overrides):
         "id": "12345",
         "slug": "will-x-happen",
         "question": "Will X happen?",
-        "outcomePrices": json.dumps(["0.42", "0.58"]),
-        "lastTradePrice": 0.42,
         "volume24hr": 50_000.0,
         "volumeNum": 400_000.0,
         "liquidityNum": 20_000.0,
@@ -220,18 +216,6 @@ def test_prune_can_empty_the_window():
 
 
 # --- payload parsing ------------------------------------------------------
-
-
-def test_price_is_parsed_from_the_json_encoded_outcome_prices():
-    assert current_price(market()) == pytest.approx(0.42)
-
-
-def test_price_falls_back_to_last_trade_when_outcome_prices_are_unusable():
-    assert current_price(market(outcomePrices="not json")) == pytest.approx(0.42)
-
-
-def test_price_is_none_when_nothing_is_quoted():
-    assert current_price({"outcomePrices": None, "lastTradePrice": None}) is None
 
 
 def test_numeric_fields_may_arrive_as_strings():
