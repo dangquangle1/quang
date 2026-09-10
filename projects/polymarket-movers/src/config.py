@@ -55,6 +55,7 @@ DEFAULT_BLOCK_TAG_SLUGS = (
     "gaming",
     "video-games",
     "space",
+    "fdv"
 )
 
 
